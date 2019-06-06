@@ -1,7 +1,9 @@
-from pricer import binomial_tree
+from BinomialTree import EuropeanCall
 import matplotlib.pyplot as plt
 import numpy as np
 
+def binomial_tree( *args, **kwargs):
+    return EuropeanCall(*args, **kwargs).getPrice()
 
 S_range = range(100)
 r_range = np.arange( 0, 0.5, 0.05 )
