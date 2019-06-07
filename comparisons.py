@@ -1,33 +1,47 @@
-from BinomialTree import EuropeanCall
+from BinomialTree import *
+from BlackScholes import BlackScholes
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+
 import numpy as np
 
-def binomial_tree( *args, **kwargs):
+def europeanCall(*args, **kwargs):
     return EuropeanCall(*args, **kwargs).getPrice()
 
-S_range = range(100)
-r_range = np.arange( 0, 0.5, 0.05 )
-T_range = np.arange( 0.1, 3, 0.1 )
-volatility_range = np.arange( 0.1, .5, 0.05 )
+def americanCall( *args, **kwargs ):
+    return AmericanCall(*args, **kwargs).getPrice()
 
-C_0_S = [binomial_tree(S_0=S_0, K=62, T=0.5, r=0.06, volatility=0.13, N=300) for S_0 in S_range]
-C_0_r = [binomial_tree(S_0=60, K=62, T=0.5, r=R, volatility=0.13, N=300) for R in r_range]
-C_0_T = [binomial_tree(S_0=60, K=62, T=t, r=0.06, volatility=0.13, N=300) for t in T_range]
-C_0_volatility = [binomial_tree(S_0=60, K=62, T=0.5, r=0.06, volatility=volatility, N=300) for volatility in volatility_range]
+def europeanPut(*args, **kwargs):
+    return EuropeanPut(*args, **kwargs).getPrice()
 
+def americanPut( *args, **kwargs ):
+    return AmericanPut(*args, **kwargs).getPrice()
+
+mpl.style.use('seaborn')
 fig, axs = plt.subplots(2, 2, gridspec_kw={'hspace': 0.25, 'wspace': 0.25})
-fig.suptitle('C_0')
 
-axs[0, 0].plot(S_range, C_0_S)
-axs[0, 0].set(xlabel='S_0')
+callParams = { 'S_0': 60, 'K': 62, 'T': 0.5, 'r': 0.06, 'volatility': 0.13, 'N': 300 }
+putParams = { 'S_0': 64, 'K': 62, 'T': 0.5, 'r': 0.06, 'volatility': 0.13, 'N': 300 }
+ranges = { 'S_0': range(1, 100),
+           'T'  : np.arange( 0.1, 3, 0.1 ),
+           'r'  : np.arange( 0, 0.5, 0.05 ),
+           'volatility': np.arange( 0.1, .5, 0.05 ) }
 
-axs[0, 1].plot(r_range, C_0_r, 'tab:orange')
-axs[0, 1].set(xlabel='r')
 
-axs[1, 0].plot(T_range, C_0_T, 'tab:green')
-axs[1, 0].set(xlabel='T')
+def plot( functions, params, title):
+    fig.suptitle('C_0 - ' + title)
 
-axs[1, 1].plot(volatility_range, C_0_volatility, 'tab:red')
-axs[1, 1].set(xlabel='volatility')
+    coord = 0
+    for param, range in ranges.items():
+        for i, f in enumerate(functions):
+            values = [ f( **{**params, param : r } ) for r in range ]
+            axs[int(coord >1), coord % 2].plot(range, values, 'C1' if i else 'C2', label=f.__name__)
+            axs[int(coord >1), coord % 2].set(xlabel=param)
+            axs[int(coord > 1), coord % 2].legend()
+        coord += 1
 
-plt.show()
+    plt.show()
+
+
+plot([europeanCall, americanCall], callParams, 'Call')
+plot([europeanPut, americanPut], putParams, 'Put')
