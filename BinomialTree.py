@@ -24,11 +24,15 @@ class EuropeanCall(object):
         return self.S_0 * pow(self.u, j) * pow(self.d, m - j)
 
     @lru_cache(999)
+    def _Cm(self, j, n):
+        return max(self._S(j, n) - self.K, 0)
+
+    @lru_cache(999)
     def _C(self, j, n ):
 
         if n == self.N - 1:
-            c_1 = max( self._S(j+1, n+1) - self.K, 0 )
-            c_2 = max( self._S(j, n+1) - self.K, 0)
+            c_1 = self._Cm( j+1, n+1 )
+            c_2 = self._Cm( j, n+1 )
         else:
             c_1 = self.c[ (j+1, n+1) ]
             c_2 = self.c[ (j, n+1) ]
@@ -71,6 +75,24 @@ class AmericanCall(EuropeanCall):
         c_n = super()._C(j, n)
         return max( self._S(j, n) - self.K, c_n )
 
+class EuropeanPut(EuropeanCall):
+
+    @lru_cache(999)
+    def _Cm(self, j, n):
+        return max(self.K - self._S(j, n) , 0)
+
+class AmericanPut(EuropeanCall):
+
+    @lru_cache(999)
+    def _Cm(self, j, n):
+        return max(self.K - self._S(j, n) , 0)
+
+    @lru_cache(999)
+    def _C(self, j, n ):
+        c_n = super()._C(j, n)
+        return max( self._S(j, n) - self.K, c_n )
+
+
 
 def recursive_binomial_tree(S_0, K, T, r, volatility, N):
     delta_t = T / N
@@ -83,22 +105,18 @@ def recursive_binomial_tree(S_0, K, T, r, volatility, N):
         return S_0 * pow(u, j) * pow(d, m - j)
 
     @lru_cache(999)
-    def Cn( j, n ):
+    def C( j, n ):
 
         if n == N - 1 :
-            c_1 = Cm( j+1, n+1 )
-            c_2 = Cm( j, n+1 )
+            c_1 = max( S( j+1, n+1 ) - K, 0 )
+            c_2 = max( S( j, n+1 ) - K, 0 )
         else:
-            c_1 = Cn( j+1, n+1 )
-            c_2 = Cn( j, n+1 )
+            c_1 = C( j+1, n+1 )
+            c_2 = C( j, n+1 )
 
         return exp( -1 * r * delta_t ) * ( p * c_1 + ( 1-p ) * c_2 )
 
-    @lru_cache(999)
-    def Cm( j, m ):
-        return max( S( j, m ) - K, 0 )
-
-    return Cn(0, 0)
+    return C(0, 0)
 
 
 
@@ -108,3 +126,5 @@ if __name__ == '__main__':
     print(JarrowRudd(S_0=60, K=62, T=0.5, r=0.06, volatility=0.13, N=300).getPrice())
     print(AmericanCall(S_0=60, K=62, T=0.5, r=0.06, volatility=0.13, N=300).getPrice())
     print(recursive_binomial_tree(S_0=60, K=62, T=0.5, r=0.06, volatility=0.13, N=300))
+    print(EuropeanPut(S_0=62, K=60, T=0.5, r=0.06, volatility=0.13, N=300).getPrice())
+    print(AmericanPut(S_0=62, K=60, T=0.5, r=0.06, volatility=0.13, N=300).getPrice())
