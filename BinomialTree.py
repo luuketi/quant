@@ -90,7 +90,7 @@ class AmericanPut(EuropeanCall):
     @lru_cache(999)
     def _C(self, j, n ):
         c_n = super()._C(j, n)
-        return max( self._S(j, n) - self.K, c_n )
+        return max( self.K - self._S(j, n), c_n )
 
 
 
